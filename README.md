@@ -1,0 +1,1 @@
+# pratech-fullstack-staj-gorevi
