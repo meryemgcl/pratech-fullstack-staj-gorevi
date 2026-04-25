@@ -73,5 +73,4 @@ pratech-izin/
 **Yönetici ekranı:** Gelen talepler tablo halinde listeleniyor. Üstte toplam/beklemede/onaylandı/reddedildi sayıları görünüyor. Durum filtrelemesi var. Beklemedeki talepler için onayla/reddet butonları tablonun yanında, tıklayınca sayfa yenilenmeden anlık olarak güncelleniyor.
 
 ---
-
-Sorularınız için: info@pratech.tr
+<!-- Failed to upload "demo_video.mp4" -->
