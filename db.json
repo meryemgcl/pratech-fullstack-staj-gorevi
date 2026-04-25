@@ -1,0 +1,16 @@
+{
+  "izinler": [
+    {
+      "id": 1,
+      "adSoyad": "meryem güçlü",
+      "izinTuru": "Yıllık İzin",
+      "baslangicTarihi": "2026-05-15",
+      "bitisTarihi": "2027-05-15",
+      "gunSayisi": 366,
+      "aciklama": "",
+      "durum": "Onaylandı",
+      "tarih": "2026-04-25T16:29:04.864Z"
+    }
+  ],
+  "nextId": 2
+}

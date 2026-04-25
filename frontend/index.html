@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pratech – İzin Yönetimi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: "#1d4ed8",
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .tab-active { border-bottom: 2px solid #1d4ed8; color: #1d4ed8; font-weight: 600; }
+    .tab-inactive { border-bottom: 2px solid transparent; color: #6b7280; }
+    .tab-inactive:hover { color: #374151; }
+    input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <!-- Üst bar -->
+  <header class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+    <span class="text-lg font-semibold text-gray-800">
+      <span class="text-blue-700">Pratech</span> İzin Sistemi
+    </span>
+    <div class="text-sm text-gray-400" id="bugun-tarih"></div>
+  </header>
+
+  <!-- Tab navigasyon -->
+  <div class="bg-white border-b border-gray-200 px-6">
+    <nav class="flex gap-6">
+      <button id="tab-personel" onclick="goTo('personel')"
+        class="tab-active py-3 text-sm transition-colors">
+        Personel — İzin Talebi
+      </button>
+      <button id="tab-yonetici" onclick="goTo('yonetici')"
+        class="tab-inactive py-3 text-sm transition-colors">
+        Yönetici Paneli
+      </button>
+    </nav>
+  </div>
+
+  <!-- ======= PERSONEL EKRANI ======= -->
+  <div id="ekran-personel" class="max-w-xl mx-auto mt-8 px-4">
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+      <h2 class="text-base font-semibold text-gray-800 mb-5">Yeni İzin Talebi</h2>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Ad Soyad <span class="text-red-500">*</span>
+          </label>
+          <input id="inp-adSoyad" type="text" placeholder="Adınız ve soyadınız"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+          <p id="err-adSoyad" class="text-red-500 text-xs mt-1 hidden"></p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            İzin Türü <span class="text-red-500">*</span>
+          </label>
+          <select id="inp-izinTuru"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+            <option value="">Seçiniz...</option>
+            <option value="Yıllık İzin">Yıllık İzin</option>
+            <option value="Sağlık İzni">Sağlık İzni</option>
+            <option value="Mazeret İzni">Mazeret İzni</option>
+          </select>
+          <p id="err-izinTuru" class="text-red-500 text-xs mt-1 hidden"></p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Başlangıç Tarihi <span class="text-red-500">*</span>
+            </label>
+            <input id="inp-baslangic" type="date"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+            <p id="err-baslangic" class="text-red-500 text-xs mt-1 hidden"></p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Bitiş Tarihi <span class="text-red-500">*</span>
+            </label>
+            <input id="inp-bitis" type="date"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+            <p id="err-bitis" class="text-red-500 text-xs mt-1 hidden"></p>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
+          <textarea id="inp-aciklama" rows="3" placeholder="İsteğe bağlı not..."
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"></textarea>
+        </div>
+      </div>
+
+      <div class="mt-5 flex justify-end">
+        <button onclick="talepGonder()"
+          class="bg-blue-700 hover:bg-blue-800 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors">
+          Talebi Gönder
+        </button>
+      </div>
+    </div>
+
+    <!-- başarı mesajı -->
+    <div id="basari-mesaj" class="hidden mt-4 bg-green-50 border border-green-200 text-green-800 text-sm rounded-lg px-4 py-3">
+      ✓ Talebiniz yöneticinize iletildi.
+    </div>
+    <!-- hata mesajı (api hatası) -->
+    <div id="genel-hata" class="hidden mt-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3"></div>
+  </div>
+
+  <!-- ======= YÖNETİCİ EKRANI ======= -->
+  <div id="ekran-yonetici" class="hidden max-w-5xl mx-auto mt-8 px-4 pb-12">
+
+    <!-- istatistik kartları -->
+    <div class="grid grid-cols-4 gap-4 mb-6">
+      <div class="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
+        <div id="stat-toplam" class="text-2xl font-bold text-gray-800">—</div>
+        <div class="text-xs text-gray-500 mt-1">Toplam</div>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
+        <div id="stat-beklemede" class="text-2xl font-bold text-yellow-500">—</div>
+        <div class="text-xs text-gray-500 mt-1">Beklemede</div>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
+        <div id="stat-onaylandi" class="text-2xl font-bold text-green-600">—</div>
+        <div class="text-xs text-gray-500 mt-1">Onaylandı</div>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
+        <div id="stat-reddedildi" class="text-2xl font-bold text-red-500">—</div>
+        <div class="text-xs text-gray-500 mt-1">Reddedildi</div>
+      </div>
+    </div>
+
+    <!-- filtre + yenile -->
+    <div class="flex items-center gap-3 mb-4">
+      <select id="filter-durum" onchange="listeyiYukle()"
+        class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="">Tüm Durumlar</option>
+        <option value="Beklemede">Beklemede</option>
+        <option value="Onaylandı">Onaylandı</option>
+        <option value="Reddedildi">Reddedildi</option>
+      </select>
+      <button onclick="listeyiYukle()"
+        class="ml-auto text-sm text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg px-3 py-2 bg-white transition-colors">
+        Yenile
+      </button>
+    </div>
+
+    <!-- tablo -->
+    <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+          <tr>
+            <th class="px-4 py-3 text-left font-medium">#</th>
+            <th class="px-4 py-3 text-left font-medium">Ad Soyad</th>
+            <th class="px-4 py-3 text-left font-medium">Tür</th>
+            <th class="px-4 py-3 text-left font-medium">Başlangıç</th>
+            <th class="px-4 py-3 text-left font-medium">Bitiş</th>
+            <th class="px-4 py-3 text-left font-medium">Gün</th>
+            <th class="px-4 py-3 text-left font-medium">Durum</th>
+            <th class="px-4 py-3 text-left font-medium">İşlem</th>
+          </tr>
+        </thead>
+        <tbody id="tablo-body" class="divide-y divide-gray-100">
+          <tr>
+            <td colspan="8" class="px-4 py-8 text-center text-gray-400 text-sm">Yükleniyor...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- toast bildirimi -->
+  <div id="toast" class="hidden fixed bottom-5 right-5 text-sm font-medium px-4 py-3 rounded-lg shadow-lg z-50"></div>
+
+<script>
+  const API_URL = "http://localhost:3001";
+
+  // Tarih göster
+  document.getElementById("bugun-tarih").textContent = new Date().toLocaleDateString("tr-TR", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric"
+  });
+
+  // Başlangıç tarihi değişince bitiş minimum'unu güncelle
+  document.getElementById("inp-baslangic").addEventListener("change", function () {
+    const bitis = document.getElementById("inp-bitis");
+    bitis.min = this.value;
+    if (bitis.value && bitis.value < this.value) {
+      bitis.value = this.value;
+    }
+  });
+
+  // minimum tarih bugün olsun
+  const bugun = new Date().toISOString().split("T")[0];
+  document.getElementById("inp-baslangic").min = bugun;
+  document.getElementById("inp-bitis").min = bugun;
+
+  // ---- Tab geçişi ----
+  function goTo(ekran) {
+    document.getElementById("ekran-personel").classList.add("hidden");
+    document.getElementById("ekran-yonetici").classList.add("hidden");
+    document.getElementById("tab-personel").className = "tab-inactive py-3 text-sm transition-colors";
+    document.getElementById("tab-yonetici").className = "tab-inactive py-3 text-sm transition-colors";
+
+    document.getElementById("ekran-" + ekran).classList.remove("hidden");
+    document.getElementById("tab-" + ekran).className = "tab-active py-3 text-sm transition-colors";
+
+    if (ekran === "yonetici") {
+      listeyiYukle();
+      istatistikleriYukle();
+    }
+  }
+
+  // ---- Tarih formatla ----
+  function tarihFormatla(iso) {
+    if (!iso) return "-";
+    return new Date(iso).toLocaleDateString("tr-TR", {
+      day: "numeric", month: "long", year: "numeric"
+    });
+  }
+
+  // ---- Durum badge ----
+  function durumBadge(durum) {
+    if (durum === "Beklemede")  return `<span class="bg-yellow-50 text-yellow-700 border border-yellow-200 text-xs px-2 py-0.5 rounded-full">Beklemede</span>`;
+    if (durum === "Onaylandı")  return `<span class="bg-green-50 text-green-700 border border-green-200 text-xs px-2 py-0.5 rounded-full">Onaylandı</span>`;
+    if (durum === "Reddedildi") return `<span class="bg-red-50 text-red-600 border border-red-200 text-xs px-2 py-0.5 rounded-full">Reddedildi</span>`;
+    return durum;
+  }
+
+  // ---- Form hata göster/temizle ----
+  function hataGoster(id, mesaj) {
+    const el = document.getElementById("err-" + id);
+    el.textContent = mesaj;
+    el.classList.remove("hidden");
+  }
+  function hatalariTemizle() {
+    ["adSoyad", "izinTuru", "baslangic", "bitis"].forEach(id => {
+      const el = document.getElementById("err-" + id);
+      if (el) el.classList.add("hidden");
+    });
+    document.getElementById("basari-mesaj").classList.add("hidden");
+    document.getElementById("genel-hata").classList.add("hidden");
+  }
+
+  // ---- Toast ----
+  function toast(mesaj, tip) {
+    const el = document.getElementById("toast");
+    el.textContent = mesaj;
+    el.className = `fixed bottom-5 right-5 text-sm font-medium px-4 py-3 rounded-lg shadow-lg z-50 ${
+      tip === "hata" ? "bg-red-600 text-white" : "bg-green-600 text-white"
+    }`;
+    el.classList.remove("hidden");
+    setTimeout(() => el.classList.add("hidden"), 3000);
+  }
+
+  // ---- Form validasyon ----
+  function formuDogrula() {
+    hatalariTemizle();
+    let gecerli = true;
+
+    const ad = document.getElementById("inp-adSoyad").value.trim();
+    const tur = document.getElementById("inp-izinTuru").value;
+    const bas = document.getElementById("inp-baslangic").value;
+    const bit = document.getElementById("inp-bitis").value;
+
+    if (!ad) {
+      hataGoster("adSoyad", "Ad soyad zorunludur.");
+      gecerli = false;
+    }
+    if (!tur) {
+      hataGoster("izinTuru", "İzin türü seçmelisiniz.");
+      gecerli = false;
+    }
+    if (!bas) {
+      hataGoster("baslangic", "Lütfen başlangıç tarihi seçiniz.");
+      gecerli = false;
+    }
+    if (!bit) {
+      hataGoster("bitis", "Lütfen bitiş tarihi seçiniz.");
+      gecerli = false;
+    }
+    if (bas && bit && bit < bas) {
+      hataGoster("bitis", "Bitiş tarihi başlangıçtan önce olamaz.");
+      gecerli = false;
+    }
+
+    return gecerli;
+  }
+
+  // ---- İzin talebi gönder ----
+  async function talepGonder() {
+    if (!formuDogrula()) return;
+
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = "Gönderiliyor...";
+
+    const veri = {
+      adSoyad: document.getElementById("inp-adSoyad").value.trim(),
+      izinTuru: document.getElementById("inp-izinTuru").value,
+      baslangicTarihi: document.getElementById("inp-baslangic").value,
+      bitisTarihi: document.getElementById("inp-bitis").value,
+      aciklama: document.getElementById("inp-aciklama").value.trim(),
+    };
+
+    try {
+      const yanit = await fetch(`${API_URL}/izin-talep`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(veri),
+      });
+
+      const data = await yanit.json();
+
+      if (!yanit.ok) {
+        const hataEl = document.getElementById("genel-hata");
+        hataEl.textContent = data.mesaj || "Bir hata oluştu.";
+        hataEl.classList.remove("hidden");
+      } else {
+        document.getElementById("basari-mesaj").classList.remove("hidden");
+        // formu sıfırla
+        ["inp-adSoyad", "inp-aciklama"].forEach(id => document.getElementById(id).value = "");
+        document.getElementById("inp-izinTuru").value = "";
+        document.getElementById("inp-baslangic").value = "";
+        document.getElementById("inp-bitis").value = "";
+      }
+    } catch (e) {
+      const hataEl = document.getElementById("genel-hata");
+      hataEl.textContent = "Sunucuya ulaşılamadı. Backend çalışıyor mu? (node server.js)";
+      hataEl.classList.remove("hidden");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Talebi Gönder";
+    }
+  }
+
+  // ---- İstatistikleri yükle ----
+  async function istatistikleriYukle() {
+    try {
+      const yanit = await fetch(`${API_URL}/istatistikler`);
+      const data = await yanit.json();
+      document.getElementById("stat-toplam").textContent    = data.toplam;
+      document.getElementById("stat-beklemede").textContent = data.beklemede;
+      document.getElementById("stat-onaylandi").textContent = data.onaylandi;
+      document.getElementById("stat-reddedildi").textContent = data.reddedildi;
+    } catch (e) {
+      // istatistikler yüklenemezse sessizce geç
+    }
+  }
+
+  // ---- Listeyi yükle ----
+  async function listeyiYukle() {
+    const tbody = document.getElementById("tablo-body");
+    tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-8 text-center text-gray-400 text-sm">Yükleniyor...</td></tr>`;
+
+    const durum = document.getElementById("filter-durum").value;
+    let url = `${API_URL}/izinler`;
+    if (durum) url += `?durum=${encodeURIComponent(durum)}`;
+
+    try {
+      const yanit = await fetch(url);
+      const data = await yanit.json();
+
+      if (!data.izinler || data.izinler.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-8 text-center text-gray-400 text-sm">Gösterilecek talep yok.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.izinler.map(iz => `
+        <tr id="satir-${iz.id}" class="hover:bg-gray-50">
+          <td class="px-4 py-3 text-gray-400 text-xs">${iz.id}</td>
+          <td class="px-4 py-3 font-medium text-gray-800">${escHtml(iz.adSoyad)}</td>
+          <td class="px-4 py-3 text-gray-600">${escHtml(iz.izinTuru)}</td>
+          <td class="px-4 py-3 text-gray-600">${tarihFormatla(iz.baslangicTarihi)}</td>
+          <td class="px-4 py-3 text-gray-600">${tarihFormatla(iz.bitisTarihi)}</td>
+          <td class="px-4 py-3 text-gray-600">${iz.gunSayisi} gün</td>
+          <td class="px-4 py-3">${durumBadge(iz.durum)}</td>
+          <td class="px-4 py-3">
+            ${iz.durum === "Beklemede" ? `
+              <div class="flex gap-2">
+                <button onclick="durumGuncelle(${iz.id}, 'Onaylandı')"
+                  class="text-xs text-green-700 border border-green-300 bg-green-50 hover:bg-green-100 px-3 py-1 rounded-lg transition-colors">
+                  Onayla
+                </button>
+                <button onclick="durumGuncelle(${iz.id}, 'Reddedildi')"
+                  class="text-xs text-red-600 border border-red-300 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-lg transition-colors">
+                  Reddet
+                </button>
+              </div>
+            ` : `<span class="text-xs text-gray-400">—</span>`}
+          </td>
+        </tr>
+      `).join("");
+
+      istatistikleriYukle();
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-8 text-center text-red-400 text-sm">
+        Sunucuya bağlanılamadı. <code class="bg-gray-100 px-1 rounded">node server.js</code> çalışıyor mu?
+      </td></tr>`;
+    }
+  }
+
+  // ---- Durum güncelle ----
+  async function durumGuncelle(id, durum) {
+    const satir = document.getElementById("satir-" + id);
+    const butonlar = satir.querySelectorAll("button");
+    butonlar.forEach(b => b.disabled = true);
+
+    try {
+      const yanit = await fetch(`${API_URL}/izin-durum/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ durum }),
+      });
+      const data = await yanit.json();
+
+      if (yanit.ok) {
+        toast(`Talep ${durum}.`, "basari");
+        listeyiYukle();
+      } else {
+        toast(data.mesaj || "Hata oluştu.", "hata");
+        butonlar.forEach(b => b.disabled = false);
+      }
+    } catch (e) {
+      toast("Sunucu hatası.", "hata");
+      butonlar.forEach(b => b.disabled = false);
+    }
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+</script>
+</body>
+</html>
